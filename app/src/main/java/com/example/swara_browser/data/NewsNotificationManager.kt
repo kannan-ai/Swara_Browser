@@ -1,6 +1,5 @@
 package com.example.swara_browser.data
 
-import android.R
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent

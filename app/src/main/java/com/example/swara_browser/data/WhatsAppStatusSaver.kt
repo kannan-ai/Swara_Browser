@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
 import java.io.FileOutputStream
+import java.util.Locale
 
 data class WhatsAppStatusItem(
     val file: File? = null,
@@ -71,7 +72,7 @@ object WhatsAppStatusSaver {
                             val isVideo = name.endsWith(".mp4") || name.endsWith(".mkv") || name.endsWith(".3gp")
 
                             if (isImage || isVideo) {
-                                val sizeMb = String.format("%.1f MB", doc.length() / (1024f * 1024f))
+                                val sizeMb = String.format(Locale.US, "%.1f MB", doc.length() / (1024f * 1024f))
                                 result.add(
                                     WhatsAppStatusItem(
                                         file = null,

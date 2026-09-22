@@ -1,45 +1,26 @@
 package com.example.swara_browser.data.local
 
 import android.content.Context
-import androidx.room.Dao
-import androidx.room.Database
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import androidx.room.Room
-import androidx.room.RoomDatabase
+
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import org.json.JSONArray
 import org.json.JSONObject
 
-@Entity(tableName = "browser_tabs")
 data class TabEntity(
-    @PrimaryKey val id: String,
+    val id: String,
     val url: String,
     val title: String,
     val position: Int,
     val lastAccessedTimestamp: Long = System.currentTimeMillis()
 )
 
-@Dao
 interface TabDao {
-    @Query("SELECT * FROM browser_tabs ORDER BY position ASC")
     fun getAllTabs(): Flow<List<TabEntity>>
-
-    @Query("SELECT * FROM browser_tabs ORDER BY position ASC")
     suspend fun getTabsSnapshot(): List<TabEntity>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateTab(tab: TabEntity)
-
-    @Query("DELETE FROM browser_tabs WHERE id = :tabId")
     suspend fun deleteTab(tabId: String)
-
-    @Query("DELETE FROM browser_tabs")
     suspend fun clearAllTabs()
 }
 
@@ -115,27 +96,6 @@ class DataStoreTabDao(context: Context) : TabDao {
     }
 }
 
-@Database(entities = [TabEntity::class], version = 1, exportSchema = false)
-abstract class TabDatabase : RoomDatabase() {
-    abstract fun tabDao(): TabDao
-
-    companion object {
-        @Volatile
-        private var INSTANCE: TabDatabase? = null
-
-        fun getDatabase(context: Context): TabDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    TabDatabase::class.java,
-                    "swara_browser_tabs.db"
-                ).build()
-                INSTANCE = instance
-                instance
-            }
-        }
-    }
-}
 
 object TabDatabaseFactory {
     fun getDao(context: Context): TabDao {

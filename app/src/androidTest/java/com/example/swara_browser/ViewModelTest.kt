@@ -12,7 +12,7 @@ class ViewModelTest {
     @Test
     fun testViewModelInit() {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val viewModel = BrowserViewModel(app)
+        BrowserViewModel(app)
         // Should not crash
     }
 }
