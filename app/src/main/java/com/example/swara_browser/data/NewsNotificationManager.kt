@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.swara_browser.MainActivity
+import com.example.swara_browser.R
 
 object NewsNotificationManager {
 
@@ -46,7 +47,7 @@ object NewsNotificationManager {
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_menu_compass)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("📰 ${newsItem.source} • ${newsItem.badgeLabel.ifBlank { "Top Story" }}")
             .setContentText(newsItem.title)
             .setStyle(NotificationCompat.BigTextStyle().bigText(newsItem.title))
