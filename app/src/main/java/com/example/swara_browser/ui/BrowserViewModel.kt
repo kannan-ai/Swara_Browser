@@ -26,6 +26,8 @@ import com.example.swara_browser.data.SelfDestructSecurityManager
 import com.example.swara_browser.data.StartupMode
 import com.example.swara_browser.data.SwaraDownloadTracker
 import com.example.swara_browser.data.TrendingNewsEngine
+import com.example.swara_browser.data.UpdateCheckerEngine
+import kotlin.math.max
 import com.example.swara_browser.data.local.TabDatabaseFactory
 import com.example.swara_browser.data.local.TabSessionPreferences
 import com.example.swara_browser.tabs.TabManager
@@ -355,6 +357,15 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = false
     )
+
+    private val _isCheckingForUpdates = MutableStateFlow(false)
+    val isCheckingForUpdates: StateFlow<Boolean> = _isCheckingForUpdates.asStateFlow()
+
+    private val _updateAvailable = MutableStateFlow<Pair<String, String>?>(null)
+    val updateAvailable: StateFlow<Pair<String, String>?> = _updateAvailable.asStateFlow()
+
+    private val _showNoUpdateToast = MutableStateFlow(false)
+    val showNoUpdateToast: StateFlow<Boolean> = _showNoUpdateToast.asStateFlow()
 
     init {
         refreshLiveNews()
@@ -737,6 +748,48 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
 
     fun closeAstraRewardDialog() {
         _uiState.value = _uiState.value.copy(showAstraRewardDialog = false)
+    }
+
+    fun checkForUpdates(currentVersionName: String) {
+        viewModelScope.launch {
+            _isCheckingForUpdates.value = true
+            val latestRelease = UpdateCheckerEngine.getLatestRelease()
+            _isCheckingForUpdates.value = false
+
+            if (latestRelease != null) {
+                val latestTag = latestRelease.first.removePrefix("v")
+                val currentTag = currentVersionName.removePrefix("v")
+
+                if (isNewerVersion(latestTag, currentTag)) {
+                    _updateAvailable.value = latestRelease
+                } else {
+                    _showNoUpdateToast.value = true
+                }
+            } else {
+                _showNoUpdateToast.value = true
+            }
+        }
+    }
+
+    private fun isNewerVersion(latest: String, current: String): Boolean {
+        val latestParts = latest.split(".").map { it.toIntOrNull() ?: 0 }
+        val currentParts = current.split(".").map { it.toIntOrNull() ?: 0 }
+        val length = max(latestParts.size, currentParts.size)
+        for (i in 0 until length) {
+            val l = latestParts.getOrElse(i) { 0 }
+            val c = currentParts.getOrElse(i) { 0 }
+            if (l > c) return true
+            if (l < c) return false
+        }
+        return false
+    }
+
+    fun dismissUpdateDialog() {
+        _updateAvailable.value = null
+    }
+
+    fun resetNoUpdateToast() {
+        _showNoUpdateToast.value = false
     }
 
     fun triggerEmergencySelfDestruct(webView: WebView? = null) {

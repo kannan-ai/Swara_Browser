@@ -71,6 +71,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -88,6 +89,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.net.Uri
 import androidx.core.net.toUri
 import com.example.swara_browser.data.AstraVaultEngine
 import com.example.swara_browser.data.ScreenshotCaptureEngine
@@ -133,6 +135,10 @@ fun BrowserScreen(
     val blockedAdsCount by viewModel.blockedAdsCount.collectAsState()
     val points by viewModel.points.collectAsState()
     val activeUntilTimestamp by viewModel.activeUntilTimestamp.collectAsState()
+    
+    val isCheckingForUpdates by viewModel.isCheckingForUpdates.collectAsState()
+    val updateAvailable by viewModel.updateAvailable.collectAsState()
+    val showNoUpdateToast by viewModel.showNoUpdateToast.collectAsState()
 
     val detectedVideoUrl by viewModel.detectedVideoUrl.collectAsState()
     val liveNews by viewModel.liveNewsList.collectAsState()
@@ -159,6 +165,13 @@ fun BrowserScreen(
 
     val isAstraShieldActive = AstraVaultEngine.isProtectionActive(activeUntilTimestamp)
     val isDownloadsActive = uiState.showDownloadsScreen
+
+    LaunchedEffect(showNoUpdateToast) {
+        if (showNoUpdateToast) {
+            Toast.makeText(context, "You are using the latest version of Swara Browser!", Toast.LENGTH_SHORT).show()
+            viewModel.resetNoUpdateToast()
+        }
+    }
 
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var showSwaraAiScreen by remember { mutableStateOf(false) }
@@ -818,6 +831,15 @@ fun BrowserScreen(
                     viewModel.triggerEmergencySelfDestruct(webViewRef)
                     viewModel.closeSettingsDialog()
                 },
+                isCheckingForUpdates = isCheckingForUpdates,
+                updateAvailable = updateAvailable,
+                onCheckForUpdates = { currentVersion -> viewModel.checkForUpdates(currentVersion) },
+                onDownloadUpdate = { url ->
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    context.startActivity(intent)
+                    viewModel.dismissUpdateDialog()
+                },
+                onDismissUpdateDialog = { viewModel.dismissUpdateDialog() },
                 onDismiss = { viewModel.closeSettingsDialog() }
             )
         } else if (uiState.showAstraRewardDialog) {

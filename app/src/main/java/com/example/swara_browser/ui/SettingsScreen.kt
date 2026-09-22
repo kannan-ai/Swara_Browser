@@ -65,6 +65,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.Update
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -125,9 +127,23 @@ fun SettingsScreen(
     onSetAsDefaultBrowserClicked: () -> Unit,
     onOpenEulaClicked: () -> Unit,
     onEmergencySelfDestructClicked: () -> Unit,
+    isCheckingForUpdates: Boolean,
+    updateAvailable: Pair<String, String>?,
+    onCheckForUpdates: (String) -> Unit,
+    onDownloadUpdate: (String) -> Unit,
+    onDismissUpdateDialog: () -> Unit,
     onDismiss: () -> Unit
 ) {
     var activeSubPage by remember { mutableStateOf(SettingsSubPage.ROOT) }
+
+    val context = LocalContext.current
+    val versionName = remember {
+        try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0.0.1"
+        } catch (e: Exception) {
+            "0.0.1"
+        }
+    }
 
     BackHandler {
         if (activeSubPage != SettingsSubPage.ROOT) {
@@ -517,6 +533,25 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    OutlinedButton(
+                        onClick = { onCheckForUpdates(versionName) },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isCheckingForUpdates
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Update,
+                            contentDescription = null
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isCheckingForUpdates) "Checking for updates..." else "Check for Updates (v$versionName)",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     Button(
                         onClick = { showSelfDestructConfirm = true },
                         colors = ButtonDefaults.buttonColors(
@@ -695,6 +730,23 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showSelfDestructConfirm = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    // Dialog 5: Update Available
+    if (updateAvailable != null) {
+        AlertDialog(
+            onDismissRequest = onDismissUpdateDialog,
+            title = { Text("Update Available!", fontWeight = FontWeight.Bold) },
+            text = { Text("A newer version (${updateAvailable.first}) of Swara Browser is available to download.") },
+            confirmButton = {
+                Button(onClick = { onDownloadUpdate(updateAvailable.second) }) {
+                    Text("Download Update")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissUpdateDialog) { Text("Later") }
             }
         )
     }
